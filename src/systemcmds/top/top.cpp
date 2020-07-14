@@ -47,16 +47,10 @@
 #include <string.h>
 #include <poll.h>
 
-#include <systemlib/cpuload.h>
-#include <systemlib/printload.h>
+#include <px4_platform/cpuload.h>
+#include <px4_platform_common/printload.h>
 #include <drivers/drv_hrt.h>
 #include <px4_platform_common/module.h>
-
-/**
- * Start the top application.
- */
-__EXPORT int top_main(int argc, char *argv[]);
-
 
 static void print_usage(void)
 {
@@ -66,12 +60,13 @@ static void print_usage(void)
 	PRINT_MODULE_USAGE_COMMAND_DESCR("once", "print load only once");
 }
 
-int
-top_main(int argc, char *argv[])
+extern "C" __EXPORT int top_main(int argc, char *argv[])
 {
+	cpuload_monitor_start();
+
 	hrt_abstime curr_time = hrt_absolute_time();
 
-	struct print_load_s load;
+	print_load_s load{};
 	init_print_load_s(curr_time, &load);
 
 	/* clear screen */
@@ -80,13 +75,14 @@ top_main(int argc, char *argv[])
 	if (argc > 1) {
 		if (!strcmp(argv[1], "once")) {
 			print_load(curr_time, 1, &load);
-			px4_sleep(1);
+			px4_sleep(3);
 			print_load(hrt_absolute_time(), 1, &load);
 
 		} else {
 			print_usage();
 		}
 
+		cpuload_monitor_stop();
 		return 0;
 	}
 
@@ -108,6 +104,7 @@ top_main(int argc, char *argv[])
 				ret = read(0, &c, 1);
 
 				if (ret) {
+					cpuload_monitor_stop();
 					return 1;
 				}
 
@@ -116,6 +113,7 @@ top_main(int argc, char *argv[])
 				case 0x1b: // esc
 				case 'c':
 				case 'q':
+					cpuload_monitor_stop();
 					return 0;
 					/* not reached */
 				}
@@ -127,5 +125,6 @@ top_main(int argc, char *argv[])
 		curr_time = hrt_absolute_time();
 	}
 
+	cpuload_monitor_stop();
 	return 0;
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2015-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file print_load_posix.c
+ * @file print_load.cpp
  *
  * Print the current system load.
  *
@@ -46,8 +46,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <systemlib/cpuload.h>
-#include <systemlib/printload.h>
+#include <px4_platform_common/printload.h>
 #include <drivers/drv_hrt.h>
 
 #ifdef __PX4_DARWIN
@@ -83,12 +82,14 @@ void init_print_load_s(uint64_t t, struct print_load_s *s)
 
 void print_load(uint64_t t, int fd, struct print_load_s *print_state)
 {
-	char *clear_line = "";
+	char clear_line[] = CL;
 
 	/* print system information */
 	if (fd == 1) {
 		dprintf(fd, "\033[H"); /* move cursor home and clear screen */
-		clear_line = CL;
+
+	} else {
+		memset(clear_line, 0, sizeof(clear_line));
 	}
 
 #if defined(__PX4_LINUX) || defined(__PX4_CYGWIN) || defined(__PX4_QURT)
@@ -180,4 +181,3 @@ void print_load_buffer(uint64_t t, char *buffer, int buffer_length, print_load_c
 {
 
 }
-
